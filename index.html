@@ -38,7 +38,7 @@
     footer{margin:20px 0;color:var(--muted);text-align:center}
     .hidden{display:none}
     .center{display:grid;gap:10px}
-    .sections{display:grid;gap:12px}
+    .sections{display:grid;gap:12px;margin-top:20px}
     .sec-btn{display:block;text-align:center;padding:14px;border-radius:12px;background:#0f1621;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
     .sec-btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:700}
     .rate{font-size:13px;color:var(--muted)}
@@ -135,9 +135,8 @@
       </div>
     </section>
 
-    <!-- Bottom sections -->
+    <!-- Bottom: only support -->
     <section class="sections">
-      <a class="sec-btn primary" href="https://tiv.mysellauth.com/" target="_blank" rel="noopener">Pay via Sellauth</a>
       <a class="sec-btn" href="mailto:support@ullas.shop">Contact support — support@ullas.shop</a>
     </section>
 
@@ -145,15 +144,13 @@
   </main>
 
   <script>
-    // Static details
     const LTC_ADDRESS = "ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
     const UPI_ID      = "ullasfr@fam";
-    const UPI_NAME    = "Ullas A"; // for pn= in UPI links
+    const UPI_NAME    = "Ullas A";
 
     const $ = id => document.getElementById(id);
     const setPressed = (btn, val) => btn.setAttribute("aria-pressed", String(val));
 
-    // Live LTC price (USD) from CoinGecko
     let ltcUsd = null;
     async function fetchPrice() {
       try {
@@ -162,21 +159,17 @@
         ltcUsd = data?.litecoin?.usd ?? null;
         if (ltcUsd) $("rate").textContent = `LTC ≈ $${ltcUsd.toLocaleString(undefined,{maximumFractionDigits:2})} USD`;
         else $("rate").textContent = "";
-      } catch {
-        $("rate").textContent = "Live price unavailable";
-      }
+      } catch { $("rate").textContent = "Live price unavailable"; }
     }
     fetchPrice();
-    setInterval(fetchPrice, 120000); // refresh every 2 min
+    setInterval(fetchPrice, 120000);
 
-    // Landing -> Builder
     $("startPay").addEventListener("click", () => {
       $("landing").classList.add("hidden");
       $("builder").classList.remove("hidden");
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    // Method state (default UPI)
     let method = "upi";
     $("pickUPI").addEventListener("click", () => setMethod("upi"));
     $("pickLTC").addEventListener("click", () => setMethod("ltc"));
@@ -191,10 +184,8 @@
       $("panel").style.display  = "none";
     }
 
-    // Helpers
     const qrURL = d => `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(d)}`;
 
-    // Build UPI URI with pa, pn, am, cu
     function buildUpiURI(amountINR) {
       const p = new URLSearchParams({
         pa: UPI_ID,
@@ -205,7 +196,6 @@
       return `upi://pay?${p.toString()}`;
     }
 
-    // Build Litecoin URI from USD -> LTC conversion using live price
     function buildLitecoinURI(amountUSD) {
       if (!ltcUsd) throw new Error("Price unavailable");
       const usd = Number(amountUSD || 0);
@@ -215,7 +205,6 @@
       return { uri: `litecoin:${LTC_ADDRESS}?${p}`, ltcAmount: ltcStr };
     }
 
-    // Generate
     $("generate").addEventListener("click", () => {
       const amount = ($("amount").value || "").trim();
       if (amount && Number(amount) <= 0) { alert("Enter an amount greater than 0."); return; }
@@ -232,7 +221,7 @@
         $("upiAmountBadge").textContent = amount || "—";
         $("upiOpen").href = uri;
       } else {
-        if (!ltcUsd) { alert("Live price unavailable. Please try again in a moment."); return; }
+        if (!ltcUsd) { alert("Live price unavailable. Please try again."); return; }
         const {uri, ltcAmount} = buildLitecoinURI(amount);
         $("ltcQR").src = qrURL(uri);
         $("ltcAddressBadge").textContent = LTC_ADDRESS;
@@ -244,13 +233,11 @@
       window.scrollTo({ top: $("panel").offsetTop - 10, behavior: "smooth" });
     });
 
-    // Reset
     $("reset").addEventListener("click", () => {
       $("amount").value = "";
       $("panel").style.display = "none";
     });
 
-    // Copy buttons
     document.querySelectorAll("[data-copy]").forEach(btn => {
       btn.addEventListener("click", async () => {
         const sel = btn.getAttribute("data-copy");
