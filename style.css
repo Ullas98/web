@@ -73,6 +73,8 @@ code.badge {
 }
 .btn.rippling::after{opacity:1;transform:scale(1)}
 
+a.btn { text-decoration:none; display:inline-block; }
+
 .qr {
   width:220px; height:220px;
   border-radius:12px;
@@ -89,7 +91,7 @@ code.badge {
 }
 
 .two { display:grid; gap:14px; }
-@media(min-width:720px){.two{grid-template-columns:220px 1fr}}
+@media(min-width:720px){.two{grid-template-columns:300px 1fr}}
 @media(max-width:480px){
   body{font-size:15px}
   .qr{width:180px;height:180px}
