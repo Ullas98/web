@@ -68,4 +68,38 @@ function renderUPI(amt){
 // render LTC
 async function getPrice(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");const j=await r.json();return j?.litecoin?.usd||null}catch{return null}}
 async function renderLTC(usd){
-  const price=await getPrice();const ltc=price?(Number(usd)/price):0;const ltcStr=(ltc>0?ltc:
+  const price=await getPrice();const ltc=price?(Number(usd)/price):0;const ltcStr=(ltc>0?ltc:0).toFixed(8);
+  const uri=`litecoin:${LTC_ADDR}?amount=${ltcStr}`;
+  document.getElementById("content").innerHTML=`<div class="two">
+    <img id="qrimg" class="qr" alt="LTC QR">
+    <div class="stack">
+      <div><span class="k">LTC Address</span>
+        <div class="row"><code class="badge">${LTC_ADDR}</code>
+        <button class="btn" onclick="copyText('${LTC_ADDR}')">Copy</button></div></div>
+      <div><span class="k">Amount (LTC)</span>
+        <div class="row"><code class="badge">${ltcStr}</code>
+        <button class="btn" onclick="copyText('${ltcStr}')">Copy</button></div></div>
+      <div><span class="k">Amount (USD)</span><div><code class="badge">${usd}</code></div></div>
+      <div class="k">Live price: 1 LTC ≈ $${price?price.toFixed(2):"—"}</div>
+      <div><a class="btn primary" href="${uri}">Open wallet</a></div>
+    </div>
+  </div>`;
+  const img=document.getElementById("qrimg");
+  img.classList.remove('ready'); img.onload=()=>img.classList.add('ready'); img.src=qr(uri);
+}
+
+// init
+(async function(){
+  const t=parseToken();
+  if(!t){document.getElementById("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a> to generate a new link.</p>';return;}
+  const who=t.name?`<div><span class="k">Username</span><div><code class="badge">${t.name}</code></div></div>`:"";
+  const meth=t.m==="u"?"UPI":"Litecoin";
+  const amtLabel=t.m==="u"?"Amount (INR)":"Amount (USD)";
+  document.getElementById("top").innerHTML=`<div class="row" style="flex-wrap:wrap">
+    <div><span class="k">Payment method</span><div><code class="badge">${meth}</code></div></div>
+    <div><span class="k">${amtLabel}</span><div><code class="badge">${t.amt}</code></div></div>${who}</div>`;
+  if(t.m==="u")renderUPI(t.amt); else await renderLTC(t.amt);
+})();
+</script>
+</body>
+</html>
