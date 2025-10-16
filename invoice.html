@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Invoice</title>
+<style>
+  :root{--bg:#0b0b0d;--card:rgba(255,255,255,.04);--muted:#b8b8c4}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Arial}
+  .wrap{width:min(760px,96vw);padding:26px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  h1{margin:0;font-size:20px}
+  .muted{color:var(--muted);font-size:13px}
+  .box{margin-top:16px;padding:18px;border-radius:10px;background:var(--card)}
+  .row{display:flex;justify-content:space-between;margin:8px 0}
+  .big{font-size:20px;font-weight:700}
+  button{margin-top:14px;padding:12px 14px;border-radius:10px;border:0;background:#fff;color:#000;font-weight:700;cursor:pointer}
+  .notes{margin-top:12px;color:var(--muted);white-space:pre-wrap}
+  .warn{color:#ffbaba;background:#330000;padding:8px;border-radius:8px;margin-top:12px}
+  a.link{color:#fff;text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 id="title">Invoice</h1>
+        <div class="muted" id="invId">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted">Status</div>
+        <div id="status" class="big">Unpaid</div>
+      </div>
+    </header>
+
+    <div class="box" id="main">
+      <div class="row"><div class="muted">Bill to</div><div id="billTo" class="big">—</div></div>
+      <div class="row"><div class="muted">Description</div><div id="desc">—</div></div>
+      <div class="row"><div class="muted">Amount</div><div id="amount" class="big">—</div></div>
+      <div id="emailRow" style="margin-top:8px"></div>
+
+      <div class="notes" id="notes"></div>
+
+      <button id="manualPay">I paid / show payment instructions</button>
+
+      <div class="warn" id="warn" style="display:none">
+        This invoice is only a static display page. It does not process payments. Complete payment using the instructions above, or contact the seller for official receipt.
+      </div>
+    </div>
+
+    <div style="margin-top:14px" class="muted">Link ID is encoded in the URL. To create more invoices, go to your <a class="link" href="index.html">invoice creator</a>.</div>
+  </div>
+
+<script>
+function b64urlDecode(s){
+  s = s.replace(/-/g,'+').replace(/_/g,'/');
+  // pad
+  while (s.length % 4) s += '=';
+  try {
+    return decodeURIComponent(escape(atob(s)));
+  } catch (e) {
+    return null;
+  }
+}
+
+function showError(msg){
+  const m = document.getElementById('main');
+  m.innerHTML = '<div style="color:#ff9b9b;font-weight:700">'+msg+'</div>';
+}
+
+const params = new URLSearchParams(location.search);
+const token = params.get('d');
+if(!token){
+  showError('Missing invoice data. Make sure the link includes the invoice token (d=...).');
+  throw new Error('no token');
+}
+
+const json = b64urlDecode(token);
+if(!json){
+  showError('Invalid token (could not decode).');
+  throw new Error('invalid token');
+}
+
+let payload;
+try { payload = JSON.parse(json); } catch(e){ showError('Invalid token (bad JSON).'); throw e; }
+
+document.getElementById('invId').textContent = payload.id || '—';
+document.getElementById('title').textContent = 'Invoice ' + (payload.id || '');
+document.getElementById('billTo').textContent = payload.name || 'Customer';
+document.getElementById('desc').textContent = payload.desc || '—';
+document.getElementById('amount').textContent = (payload.amount || 0).toFixed(2) + ' ' + (payload.currency || 'INR');
+
+if(payload.email){
+  document.getElementById('emailRow').innerHTML = '<div class="muted">Email</div><div>'+payload.email+'</div>';
+}
+
+if(payload.notes){
+  document.getElementById('notes').textContent = 'Notes: ' + payload.notes;
+}
+
+document.getElementById('manualPay').addEventListener('click', ()=>{
+  // When user clicks, reveal instructions (for example show notes or bank details).
+  document.getElementById('warn').style.display='block';
+  alert('This is a static page. Complete payment using the instructions provided in Notes, or contact the seller directly.');
+});
+</script>
+</body>
+</html>
