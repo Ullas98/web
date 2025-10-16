@@ -12,7 +12,6 @@
     <h1>Invoice</h1>
     <div id="top" class="stack"></div>
     <div id="content" class="stack"></div>
-    <div class="row"><a class="btn" href="./index.html">← Home</a></div>
   </section>
 </main>
 
@@ -20,7 +19,6 @@
 const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
 const qr=d=>`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(d)}`;
 
-// ripple
 document.addEventListener('pointerdown',e=>{
   const b=e.target.closest('.btn');if(!b)return;
   const r=b.getBoundingClientRect();
@@ -30,10 +28,8 @@ document.addEventListener('pointerdown',e=>{
   setTimeout(()=>b.classList.remove('rippling'),220)
 },{passive:true});
 
-// copy helper
 async function copyText(t){try{await navigator.clipboard.writeText(t);}catch{}}
 
-// parse invoice token
 function parseToken(){
   const t=(location.hash||"").slice(1);
   if(!t) return null;
@@ -45,8 +41,12 @@ function parseToken(){
   return {m, amt:Number(amt), name};
 }
 
-// render UPI
-function upiURI(amount){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(amount)p.set("am",amount);return `upi://pay?${p}`;}
+function upiURI(amount){
+  const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});
+  if(amount)p.set("am",amount);
+  return `upi://pay?${p}`;
+}
+
 function renderUPI(amt){
   const uri=upiURI(amt);
   document.getElementById("content").innerHTML=`<div class="two">
@@ -65,8 +65,13 @@ function renderUPI(amt){
   img.classList.remove('ready'); img.onload=()=>img.classList.add('ready'); img.src=qr(uri);
 }
 
-// render LTC
-async function getPrice(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");const j=await r.json();return j?.litecoin?.usd||null}catch{return null}}
+async function getPrice(){
+  try{
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");
+    const j=await r.json();return j?.litecoin?.usd||null
+  }catch{return null}
+}
+
 async function renderLTC(usd){
   const price=await getPrice();const ltc=price?(Number(usd)/price):0;const ltcStr=(ltc>0?ltc:0).toFixed(8);
   const uri=`litecoin:${LTC_ADDR}?amount=${ltcStr}`;
@@ -88,10 +93,9 @@ async function renderLTC(usd){
   img.classList.remove('ready'); img.onload=()=>img.classList.add('ready'); img.src=qr(uri);
 }
 
-// init
 (async function(){
   const t=parseToken();
-  if(!t){document.getElementById("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a> to generate a new link.</p>';return;}
+  if(!t){document.getElementById("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a>.</p>';return;}
   const who=t.name?`<div><span class="k">Username</span><div><code class="badge">${t.name}</code></div></div>`:"";
   const meth=t.m==="u"?"UPI":"Litecoin";
   const amtLabel=t.m==="u"?"Amount (INR)":"Amount (USD)";
