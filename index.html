@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pay — Quick</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Quick Pay</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="wrap stack">
-  <section class="card stack">
+  <section class="card stack reveal">
     <h1>Quick Pay</h1>
     <p class="lead">Use UPI or Litecoin. For custom invoices, use <a href="./new.html">Create invoice</a>.</p>
 
     <!-- UPI -->
-    <div class="card stack">
+    <div class="card stack reveal">
       <h3>UPI</h3>
       <div class="two">
         <img id="upiQR" class="qr" alt="UPI QR">
@@ -23,15 +23,15 @@
             <button class="btn" onclick="copyText('ullasfr@fam')">Copy</button>
           </div>
           <div class="row">
-            <input id="upiAmt" type="number" step="0.01" min="0" placeholder="Amount (INR)">
-            <button class="btn primary" id="upiOpen">Open UPI app</button>
+            <input id="upiAmt" type="number" step="0.01" min="0" placeholder="Amount (INR)" />
+            <a class="btn primary" id="upiOpen">Open UPI app</a>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Litecoin -->
-    <div class="card stack">
+    <div class="card stack reveal">
       <h3>Litecoin</h3>
       <div class="two">
         <img id="ltcQR" class="qr" alt="LTC QR">
@@ -41,10 +41,10 @@
             <button class="btn" onclick="copyText('ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z')">Copy</button>
           </div>
           <div class="row">
-            <input id="usdAmt" type="number" step="0.01" min="0" placeholder="Amount (USD)">
-            <button class="btn primary" id="ltcOpen">Open wallet</button>
+            <input id="usdAmt" type="number" step="0.01" min="0" placeholder="Amount (USD)" />
+            <a class="btn primary" id="ltcOpen">Open wallet</a>
           </div>
-          <span id="rate" style="color:var(--muted);font-size:13px"></span>
+          <span id="rate" class="muted" style="font-size:13px"></span>
         </div>
       </div>
     </div>
@@ -66,18 +66,66 @@ const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rpls
 const $=id=>document.getElementById(id);
 const qr=(d)=>`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(d)}`;
 
+/* ripple */
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  const r=b.getBoundingClientRect();
+  b.style.setProperty('--x',`${e.clientX-r.left}px`);
+  b.style.setProperty('--y',`${e.clientY-r.top}px`);
+  b.classList.add('rippling');
+  setTimeout(()=>b.classList.remove('rippling'),220)
+},{passive:true});
+
+/* reveal */
+document.querySelectorAll('.reveal').forEach(c=>requestAnimationFrame(()=>c.classList.add('show')));
+
 $("yr").textContent=new Date().getFullYear();
 
-function upiURI(am){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(am)p.set("am",am);return `upi://pay?${p}`;}
-function setUpi(){const am=$("upiAmt").value.trim();const uri=upiURI(am);$("upiQR").src=qr(uri);$("upiOpen").onclick=()=>location.href=uri;}
-$("upiAmt").addEventListener("input",setUpi);setUpi();
+/* UPI */
+function upiURI(am){
+  const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});
+  if(am)p.set("am",am);
+  return `upi://pay?${p}`;
+}
+function setUpi(){
+  const am=$("upiAmt").value.trim();
+  const uri=upiURI(am);
+  const img=$("upiQR");
+  img.classList.remove("ready");
+  img.onload=()=>img.classList.add("ready");
+  img.src=qr(uri);
+  $("upiOpen").href=uri;
+}
+$("upiAmt").addEventListener("input",setUpi);
+setUpi();
 
+/* LTC */
 let ltcUsd=null;
-async function price(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");const j=await r.json();ltcUsd=j?.litecoin?.usd||null;$("rate").textContent=ltcUsd?`1 LTC ≈ $${ltcUsd.toFixed(2)}`:"";}catch{}}
+async function price(){
+  try{
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd",{cache:"no-store"});
+    const j=await r.json();ltcUsd=j?.litecoin?.usd||null;
+    $("rate").textContent=ltcUsd?`1 LTC ≈ $${ltcUsd.toFixed(2)}`:"";
+  }catch{}
+}
 price();setInterval(price,120000);
-function setLtc(){const usd=$("usdAmt").value.trim();const uri=`litecoin:${LTC_ADDR}?amount=${ltcUsd?(usd/ltcUsd).toFixed(8):0}`;$("ltcQR").src=qr(uri);$("ltcOpen").onclick=()=>location.href=uri;}
-$("usdAmt").addEventListener("input",setLtc);setLtc();
+function ltcURI(usd){
+  const ltc=ltcUsd?Math.max(0,(Number(usd)||0)/ltcUsd):0;
+  return `litecoin:${LTC_ADDR}?amount=${ltc.toFixed(8)}`;
+}
+function setLtc(){
+  const usd=$("usdAmt").value.trim();
+  const uri=ltcURI(usd);
+  const img=$("ltcQR");
+  img.classList.remove("ready");
+  img.onload=()=>img.classList.add("ready");
+  img.src=qr(uri);
+  $("ltcOpen").href=uri;
+}
+$("usdAmt").addEventListener("input",setLtc);
+setLtc();
 
+/* copy helper */
 async function copyText(t){try{await navigator.clipboard.writeText(t);}catch{}}
 </script>
 </body>
