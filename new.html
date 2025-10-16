@@ -4,30 +4,31 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Create Invoice</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="wrap stack">
-  <section class="card stack">
+  <section class="card stack reveal">
     <h1>Create Invoice</h1>
 
     <div class="row" style="width:100%">
       <div style="flex:1 1 160px">
-        <label for="method">Payment method</label>
+        <label for="method" class="muted">Payment method</label>
         <select id="method">
           <option value="u" selected>UPI (INR)</option>
           <option value="l">Litecoin (USD → LTC)</option>
         </select>
       </div>
+
       <div style="flex:1 1 160px">
-        <label for="amount">Amount</label>
-        <input id="amount" type="number" step="0.01" min="0" placeholder="e.g. 499 or 20">
+        <label for="amount" class="muted">Amount</label>
+        <input id="amount" type="number" step="0.01" min="0" placeholder="e.g. 499 or 20" />
       </div>
     </div>
 
     <div>
-      <label for="name">Username / Note (optional)</label>
-      <input id="name" type="text" maxlength="40" placeholder="e.g. alex">
+      <label for="name" class="muted">Username / Note (optional)</label>
+      <input id="name" type="text" maxlength="40" placeholder="e.g. alex" />
     </div>
 
     <div class="row">
@@ -36,21 +37,56 @@
     </div>
 
     <div id="out" class="stack" style="display:none">
-      <div><span style="color:var(--muted)">Share this link:</span></div>
+      <div class="muted">Share this link:</div>
       <div class="row">
         <code class="badge" id="linkBox"></code>
         <button class="btn" id="copy">Copy</button>
         <a id="open" class="btn" target="_blank" rel="noopener">Open</a>
+      </div>
+      <div class="muted" style="font-size:13px">
+        Examples: <code>pay.html#u|499|alex</code> or <code>pay.html#l|20|alex</code>
       </div>
     </div>
   </section>
 </main>
 
 <script>
-const $=id=>document.getElementById(id);
-function buildToken(m,a,n){const mm=(m||"").trim().charAt(0).toLowerCase();const aa=(a||"").trim();const nn=(n||"").trim();if(!mm||!aa)return null;const safeN=nn.replaceAll("|","-");return safeN?`${mm}|${aa}|${safeN}`:`${mm}|${aa}`;}
-$("make").addEventListener("click",()=>{const m=$("method").value;const a=$("amount").value;const n=$("name").value;if(!a||Number(a)<=0){alert("Enter a valid amount.");return;}const token=buildToken(m,a,n);if(!token){alert("Could not build link.");return;}const url=new URL("./pay.html",location.href);url.hash=token;$("linkBox").textContent=url.href;$("open").href=url.href;$("out").style.display="grid";});
-$("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("linkBox").textContent.trim());}catch{}});
+/* ripple */
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.btn'); if (!b) return;
+  const r = b.getBoundingClientRect();
+  b.style.setProperty('--x', `${e.clientX - r.left}px`);
+  b.style.setProperty('--y', `${e.clientY - r.top}px`);
+  b.classList.add('rippling');
+  setTimeout(() => b.classList.remove('rippling'), 220);
+}, { passive: true });
+
+/* reveal cards */
+document.querySelectorAll('.reveal').forEach(c => requestAnimationFrame(() => c.classList.add('show')));
+
+/* helpers */
+const $ = id => document.getElementById(id);
+
+function buildToken(m,a,n){
+  const mm = (m||'').trim().charAt(0).toLowerCase();   // 'u' or 'l'
+  const aa = (a||'').toString().trim();
+  const nn = (n||'').trim().replaceAll('|','-');       // guard against delimiter
+  if (!mm || !aa || Number(aa) <= 0) return null;
+  return nn ? `${mm}|${aa}|${nn}` : `${mm}|${aa}`;
+}
+
+$("make").addEventListener("click", () => {
+  const token = buildToken($("method").value, $("amount").value, $("name").value);
+  if (!token) { alert("Enter a valid amount."); return; }
+  const url = new URL("./pay.html", location.href); url.hash = token;
+  $("linkBox").textContent = url.href;
+  $("open").href = url.href;
+  $("out").style.display = "grid";
+});
+
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("linkBox").textContent.trim()); } catch {}
+});
 </script>
 </body>
 </html>
