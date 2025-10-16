@@ -1,260 +1,110 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pay — UPI or LTC</title>
-  <style>
-    :root {
-      --bg:#0b0f14; --card:#111826; --ink:#eef3fb; --muted:#9fb0c5;
-      --line:#1e2a3c; --accent:#4dd1a7;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto,Ubuntu}
-    .wrap{max-width:820px;margin:28px auto;padding:0 14px}
-    h1{margin:0 0 8px;font-size:26px}
-    p.lead{margin:0 0 16px;color:var(--muted)}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28)}
-    .stack{display:grid;gap:12px}
-    .choice{display:flex;gap:8px}
-    .pill{flex:1 1 50%;padding:12px;border:1px solid var(--line);background:#0f1621;border-radius:12px;cursor:pointer;color:#fff}
-    .pill[aria-pressed="true"]{background:var(--accent);color:#000;border-color:transparent;font-weight:700}
-    label{display:block;margin:8px 0 6px;color:var(--muted)}
-    input{
-      width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);
-      background:#0f1621;color:var(--ink)
-    }
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:12px 14px;border-radius:10px;width:100%}
-    .btn:hover{border-color:#2a3e58}
-    .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
-    .btn.success{border-color:var(--accent);color:var(--accent)}
-    code.badge{display:inline-block;padding:10px 12px;border:1px solid var(--line);background:#0a111b;border-radius:10px;font-family:ui-monospace,Menlo,monospace}
-    .qr{width:220px;height:220px;border-radius:12px;background:#0a111b;border:1px solid var(--line)}
-    .meta{color:var(--muted);font-size:13px}
-    .panel{display:none}
-    .two-col{display:grid;grid-template-columns:1fr;gap:14px}
-    .kicker{font-size:13px;color:var(--muted);margin:2px 0 8px}
-    footer{margin:20px 0;color:var(--muted);text-align:center}
-    .hidden{display:none}
-    .center{display:grid;gap:10px}
-    .sections{display:grid;gap:12px;margin-top:20px}
-    .sec-btn{display:block;text-align:center;padding:14px;border-radius:12px;background:#0f1621;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
-    .sec-btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:700}
-    .rate{font-size:13px;color:var(--muted)}
-    @media (min-width: 720px){
-      .two-col{grid-template-columns:220px 1fr}
-      .btn{width:auto}
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Create Invoice — Ullas</title>
+<style>
+  :root{--bg:#0b0b0d;--card:rgba(255,255,255,.04);--muted:#b8b8c4}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Arial}
+  .wrap{width:min(720px,94vw);padding:26px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  h1{margin:4px 0 12px;font-size:22px}
+  label{display:block;color:var(--muted);margin-top:12px;font-size:13px}
+  input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #222;background:#070708;color:#fff;margin-top:6px;font-size:15px}
+  textarea{min-height:84px;resize:vertical}
+  .row{display:flex;gap:10px}
+  .row > *{flex:1}
+  button{margin-top:14px;padding:12px 14px;border-radius:10px;border:0;background:#fff;color:#000;font-weight:700;cursor:pointer}
+  pre{background:#060607;color:#dcdceb;padding:12px;border-radius:8px;overflow:auto;margin-top:12px}
+  .small{color:var(--muted);font-size:13px;margin-top:8px}
+</style>
 </head>
 <body>
-  <main class="wrap stack">
-    <!-- Landing -->
-    <section class="card stack" id="landing">
-      <h1>Payments</h1>
-      <p class="lead">Tap <b>Pay</b> to choose a method and enter an amount. You’ll get a QR + payment link instantly.</p>
-      <div class="center">
-        <button id="startPay" class="btn primary">Pay</button>
-      </div>
-    </section>
+  <div class="wrap">
+    <h1>Create an invoice link</h1>
+    <p class="small">Fill in the details and press <strong>Generate link</strong>. Copy the link and send it to the customer.</p>
 
-    <!-- Builder -->
-    <section class="card stack hidden" id="builder">
-      <div class="choice" role="group" aria-label="Payment method">
-        <button id="pickUPI" class="pill" aria-pressed="true">UPI (INR)</button>
-        <button id="pickLTC" class="pill" aria-pressed="false">Litecoin (USD → LTC)</button>
-      </div>
+    <label>Invoice ID (optional)</label>
+    <input id="invoiceId" placeholder="INV-2025-001 (or leave blank to auto-generate)">
 
+    <label>Customer name (optional)</label>
+    <input id="custName" placeholder="Client Name">
+
+    <label>Customer email (optional)</label>
+    <input id="custEmail" type="email" placeholder="client@example.com">
+
+    <label>Description</label>
+    <textarea id="desc" placeholder="Work description, details, etc."></textarea>
+
+    <div class="row">
       <div>
-        <label id="amtLabel" for="amount">Amount (in INR)</label>
-        <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 499" />
-        <div class="row" style="justify-content:space-between">
-          <p id="hint" class="kicker" style="margin:0">Enter INR for UPI. For LTC, enter USD — we’ll convert to LTC.</p>
-          <span id="rate" class="rate"></span>
-        </div>
+        <label>Amount</label>
+        <input id="amount" type="number" min="0" step="0.01" placeholder="1999.00">
       </div>
-
-      <div class="row">
-        <button id="generate" class="btn primary">Generate</button>
-        <button id="reset" class="btn">Reset</button>
+      <div>
+        <label>Currency</label>
+        <select id="currency">
+          <option value="INR">INR</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
       </div>
-    </section>
+    </div>
 
-    <!-- Result -->
-    <section id="panel" class="card panel">
-      <!-- UPI -->
-      <div id="upiBlock" class="stack">
-        <h3 style="margin:0">UPI payment</h3>
-        <div class="two-col">
-          <img id="upiQR" class="qr" alt="UPI QR">
-          <div class="stack">
-            <div>
-              <div class="kicker">UPI ID</div>
-              <div class="row">
-                <code class="badge" id="upiIdBadge"></code>
-                <button class="btn" data-copy="#upiIdBadge">Copy</button>
-              </div>
-            </div>
-            <div>
-              <div class="kicker">Amount (INR)</div>
-              <div class="row">
-                <code class="badge" id="upiAmountBadge"></code>
-                <button class="btn" data-copy="#upiAmountBadge">Copy</button>
-                <a id="upiOpen" class="btn" target="_blank" rel="noopener">Open UPI app</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <label>Notes (optional)</label>
+    <input id="notes" placeholder="e.g., Bank transfer to AC XXX, or pay via UPI: xxxx@bank">
 
-      <!-- LTC -->
-      <div id="ltcBlock" class="stack">
-        <h3 style="margin:0">Litecoin payment</h3>
-        <div class="two-col">
-          <img id="ltcQR" class="qr" alt="Litecoin QR">
-          <div class="stack">
-            <div>
-              <div class="kicker">Address</div>
-              <div class="row">
-                <code class="badge" id="ltcAddressBadge"></code>
-                <button class="btn" data-copy="#ltcAddressBadge">Copy</button>
-              </div>
-            </div>
-            <div>
-              <div class="kicker">Exact amount (LTC)</div>
-              <div class="row">
-                <code class="badge" id="ltcAmountBadge"></code>
-                <button class="btn" data-copy="#ltcAmountBadge">Copy</button>
-                <a id="ltcOpen" class="btn" target="_blank" rel="noopener">Open wallet</a>
-              </div>
-              <div class="meta" id="convText"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <button id="gen">Generate link</button>
 
-    <!-- Bottom: only support -->
-    <section class="sections">
-      <a class="sec-btn" href="mailto:support@ullas.shop">Contact support — support@ullas.shop</a>
-    </section>
+    <div id="out" style="margin-top:14px"></div>
 
-    <footer>&copy; <span id="yr"></span></footer>
-  </main>
+    <pre id="preview" style="display:none"></pre>
+  </div>
 
-  <script>
-    const LTC_ADDRESS = "ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
-    const UPI_ID      = "ullasfr@fam";
-    const UPI_NAME    = "Ullas A";
+<script>
+function b64urlEncode(str){
+  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function makeToken(obj){
+  return b64urlEncode(JSON.stringify(obj));
+}
+function uid(){
+  return 'id'+Math.random().toString(36).slice(2,10);
+}
 
-    const $ = id => document.getElementById(id);
-    const setPressed = (btn, val) => btn.setAttribute("aria-pressed", String(val));
+document.getElementById('gen').addEventListener('click', ()=>{
+  const id = document.getElementById('invoiceId').value.trim() || uid();
+  const payload = {
+    id,
+    name: document.getElementById('custName').value.trim() || null,
+    email: document.getElementById('custEmail').value.trim() || null,
+    desc: document.getElementById('desc').value.trim() || 'Invoice',
+    amount: Number(document.getElementById('amount').value) || 0,
+    currency: document.getElementById('currency').value || 'INR',
+    notes: document.getElementById('notes').value.trim() || null,
+    ts: Date.now()
+  };
 
-    let ltcUsd = null;
-    async function fetchPrice() {
-      try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd", {cache:"no-store"});
-        const data = await res.json();
-        ltcUsd = data?.litecoin?.usd ?? null;
-        if (ltcUsd) $("rate").textContent = `LTC ≈ $${ltcUsd.toLocaleString(undefined,{maximumFractionDigits:2})} USD`;
-        else $("rate").textContent = "";
-      } catch { $("rate").textContent = "Live price unavailable"; }
-    }
-    fetchPrice();
-    setInterval(fetchPrice, 120000);
+  // Basic validation
+  if (!payload.amount || payload.amount <= 0) {
+    alert('Enter a valid amount (> 0).');
+    return;
+  }
+  const token = makeToken(payload);
+  const link = location.origin + location.pathname.replace(/index\.html$/,'').replace(/\/$/,'') + '/invoice.html?d=' + encodeURIComponent(token);
 
-    $("startPay").addEventListener("click", () => {
-      $("landing").classList.add("hidden");
-      $("builder").classList.remove("hidden");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
+  const out = document.getElementById('out');
+  out.innerHTML = `<div><strong>Shareable link:</strong><div style="margin-top:8px"><a href="${link}" target="_blank">${link}</a></div></div>
+  <div class="small">Tip: use this link as-is. If you want to hide details, shorten the link via your preferred URL shortener.</div>
+  <div style="margin-top:8px"><button id="copy">Copy link</button></div>`;
 
-    let method = "upi";
-    $("pickUPI").addEventListener("click", () => setMethod("upi"));
-    $("pickLTC").addEventListener("click", () => setMethod("ltc"));
+  document.getElementById('preview').style.display='block';
+  document.getElementById('preview').textContent = JSON.stringify(payload,null,2);
 
-    function setMethod(m) {
-      method = m;
-      const isUPI = m === "upi";
-      setPressed($("pickUPI"), isUPI);
-      setPressed($("pickLTC"), !isUPI);
-      $("amtLabel").textContent = isUPI ? "Amount (in INR)" : "Amount (in USD)";
-      $("amount").placeholder   = isUPI ? "e.g. 499" : "e.g. 20";
-      $("panel").style.display  = "none";
-    }
-
-    const qrURL = d => `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(d)}`;
-
-    function buildUpiURI(amountINR) {
-      const p = new URLSearchParams({
-        pa: UPI_ID,
-        pn: UPI_NAME,
-        cu: "INR"
-      });
-      if (amountINR) p.set("am", amountINR);
-      return `upi://pay?${p.toString()}`;
-    }
-
-    function buildLitecoinURI(amountUSD) {
-      if (!ltcUsd) throw new Error("Price unavailable");
-      const usd = Number(amountUSD || 0);
-      const ltcAmount = Math.max(0, usd / ltcUsd);
-      const ltcStr = ltcAmount.toFixed(8);
-      const p = new URLSearchParams({ amount: ltcStr });
-      return { uri: `litecoin:${LTC_ADDRESS}?${p}`, ltcAmount: ltcStr };
-    }
-
-    $("generate").addEventListener("click", () => {
-      const amount = ($("amount").value || "").trim();
-      if (amount && Number(amount) <= 0) { alert("Enter an amount greater than 0."); return; }
-
-      $("panel").style.display = "block";
-      const isUPI = method === "upi";
-      $("upiBlock").style.display = isUPI ? "block" : "none";
-      $("ltcBlock").style.display = isUPI ? "none"  : "block";
-
-      if (isUPI) {
-        const uri = buildUpiURI(amount);
-        $("upiQR").src = qrURL(uri);
-        $("upiIdBadge").textContent     = UPI_ID;
-        $("upiAmountBadge").textContent = amount || "—";
-        $("upiOpen").href = uri;
-      } else {
-        if (!ltcUsd) { alert("Live price unavailable. Please try again."); return; }
-        const {uri, ltcAmount} = buildLitecoinURI(amount);
-        $("ltcQR").src = qrURL(uri);
-        $("ltcAddressBadge").textContent = LTC_ADDRESS;
-        $("ltcAmountBadge").textContent  = ltcAmount;
-        $("ltcOpen").href = uri;
-        $("convText").textContent = `Based on live price: 1 LTC ≈ $${ltcUsd} USD`;
-      }
-
-      window.scrollTo({ top: $("panel").offsetTop - 10, behavior: "smooth" });
-    });
-
-    $("reset").addEventListener("click", () => {
-      $("amount").value = "";
-      $("panel").style.display = "none";
-    });
-
-    document.querySelectorAll("[data-copy]").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const sel = btn.getAttribute("data-copy");
-        const text = document.querySelector(sel).textContent.trim();
-        try {
-          await navigator.clipboard.writeText(text);
-          btn.classList.add("success"); btn.textContent = "Copied!";
-          setTimeout(()=>{ btn.classList.remove("success"); btn.textContent="Copy"; }, 1200);
-        } catch {
-          btn.textContent = "Press Ctrl/Cmd+C";
-          const r = document.createRange(); r.selectNodeContents(document.querySelector(sel));
-          const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-        }
-      });
-    });
-
-    $("yr").textContent = new Date().getFullYear();
-  </script>
+  document.getElementById('copy').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(link).then(()=>{ alert('Copied link to clipboard'); }).catch(()=>{ alert('Copy failed — manually select and copy the link.'); });
+  });
+});
+</script>
 </body>
 </html>
