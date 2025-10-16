@@ -1,31 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Create Invoice</title>
-<style>
-  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7;--anim-fast:160ms;--anim-med:220ms;--easing:cubic-bezier(.2,.65,.2,1)}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
-  .wrap{max-width:820px;margin:28px auto;padding:0 14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28);
-        transition:transform var(--anim-med) var(--easing),opacity var(--anim-med) var(--easing)}
-  .stack{display:grid;gap:12px}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  h1{margin:0 0 8px;font-size:26px}
-  label{color:var(--muted);display:block;margin:8px 0 6px}
-  input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0f1621;color:var(--ink)}
-  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:12px 14px;border-radius:10px;position:relative;overflow:hidden;
-       transition:transform var(--anim-fast) var(--easing),box-shadow var(--anim-fast) var(--easing)}
-  .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.25)}
-  .btn:active{transform:translateY(0);box-shadow:none}
-  .btn::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--x,50%) var(--y,50%),rgba(255,255,255,.18),transparent 45%);
-              opacity:0;transform:scale(.9);transition:opacity 300ms var(--easing),transform 300ms var(--easing)}
-  .btn.rippling::after{opacity:1;transform:scale(1)}
-  code.badge{display:inline-block;padding:10px 12px;border:1px solid var(--line);background:#0a111b;border-radius:10px;font-family:ui-monospace,Menlo,monospace;word-break:break-all}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Create Invoice</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="wrap stack">
@@ -36,13 +15,13 @@
       <div style="flex:1 1 160px">
         <label for="method">Payment method</label>
         <select id="method">
-          <option value="u" selected>UPI (amount in INR)</option>
-          <option value="l">Litecoin (amount in USD → LTC on payment page)</option>
+          <option value="u" selected>UPI (INR)</option>
+          <option value="l">Litecoin (USD → LTC)</option>
         </select>
       </div>
       <div style="flex:1 1 160px">
         <label for="amount">Amount</label>
-        <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 499 or 20">
+        <input id="amount" type="number" step="0.01" min="0" placeholder="e.g. 499 or 20">
       </div>
     </div>
 
@@ -63,7 +42,6 @@
         <button class="btn" id="copy">Copy</button>
         <a id="open" class="btn" target="_blank" rel="noopener">Open</a>
       </div>
-      <div style="color:var(--muted);font-size:13px">Example: <code>pay.html#u|499|alex</code> or <code>pay.html#l|20|alex</code></div>
     </div>
   </section>
 </main>
@@ -71,11 +49,17 @@
 <script>
 const $=id=>document.getElementById(id);
 
-// animations
-document.querySelectorAll('.card').forEach(c=>{c.classList.add('reveal');requestAnimationFrame(()=>c.classList.add('show'))});
-document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty('--x',`${e.clientX-r.left}px`);b.style.setProperty('--y',`${e.clientY-r.top}px`);b.classList.add('rippling');setTimeout(()=>b.classList.remove('rippling'),220)},{passive:true});
+// ripple
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  const r=b.getBoundingClientRect();
+  b.style.setProperty('--x',`${e.clientX-r.left}px`);
+  b.style.setProperty('--y',`${e.clientY-r.top}px`);
+  b.classList.add('rippling');
+  setTimeout(()=>b.classList.remove('rippling'),220)
+},{passive:true});
 
-// build invoice token
+// token builder
 function buildToken(m,a,n){
   const mm=(m||"").trim().charAt(0).toLowerCase(); 
   const aa=(a||"").toString().trim();
@@ -98,7 +82,7 @@ $("make").addEventListener("click",()=>{
 
 $("copy").addEventListener("click", async ()=>{
   const t=$("linkBox").textContent.trim();
-  try{await navigator.clipboard.writeText(t);$("copy").textContent="Copied!";setTimeout(()=>$("copy").textContent="Copy",1200);}catch{}
+  try{await navigator.clipboard.writeText(t);}catch{}
 });
 </script>
 </body>
