@@ -5,18 +5,33 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pay — Quick</title>
 <style>
-  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
+  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7;--anim-fast:160ms;--anim-med:220ms;--easing:cubic-bezier(.2,.65,.2,1)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
   .wrap{max-width:820px;margin:28px auto;padding:0 14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28)}
-  .stack{display:grid;gap:12px} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  h1{margin:0 0 8px;font-size:26px} p.lead{margin:0 0 16px;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28);
+        transition:transform var(--anim-med) var(--easing),opacity var(--anim-med) var(--easing),box-shadow var(--anim-med) var(--easing)}
+  .stack{display:grid;gap:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{margin:0 0 8px;font-size:26px}
+  p.lead{margin:0 0 16px;color:var(--muted)}
   code.badge{display:inline-block;padding:10px 12px;border:1px solid var(--line);background:#0a111b;border-radius:10px;font-family:ui-monospace,Menlo,monospace}
-  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:10px 14px;border-radius:10px}
-  .btn:hover{border-color:#2a3e58} .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
-  .qr{width:220px;height:220px;border-radius:12px;background:#0a111b;border:1px solid var(--line)}
-  .two{display:grid;grid-template-columns:1fr;gap:14px} @media(min-width:720px){.two{grid-template-columns:220px 1fr}}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:10px 14px;border-radius:10px;position:relative;overflow:hidden;
+       transition:transform var(--anim-fast) var(--easing),box-shadow var(--anim-fast) var(--easing)}
+  .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .btn:active{transform:translateY(0);box-shadow:none}
+  .btn::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--x,50%) var(--y,50%),rgba(255,255,255,.18),transparent 45%);
+              opacity:0;transform:scale(.9);transition:opacity 300ms var(--easing),transform 300ms var(--easing)}
+  .btn.rippling::after{opacity:1;transform:scale(1)}
+  .qr{width:220px;height:220px;border-radius:12px;border:1px solid var(--line);
+      background:linear-gradient(100deg,rgba(255,255,255,.08) 20%,rgba(255,255,255,.18) 30%,rgba(255,255,255,.08) 40%) #0a111b;
+      background-size:200% 100%;animation:shimmer 1200ms var(--easing) infinite}
+  .qr.ready{animation:none;background:#0a111b}
+  .two{display:grid;gap:14px}
+  @media(min-width:720px){.two{grid-template-columns:220px 1fr}}
   footer{margin:20px 0;color:var(--muted);text-align:center}
+  @keyframes shimmer{0%{background-position:180% 0}100%{background-position:-20% 0}}
 </style>
 </head>
 <body>
@@ -24,7 +39,8 @@
   <section class="card stack">
     <h1>Quick Pay</h1>
     <p class="lead">Use UPI or Litecoin. For custom amounts with a shareable link, use <a href="./new.html">Create invoice</a>.</p>
-    <!-- UPI quick -->
+
+    <!-- UPI -->
     <div class="card stack">
       <h3 style="margin:0">UPI</h3>
       <div class="two">
@@ -38,7 +54,8 @@
         </div>
       </div>
     </div>
-    <!-- LTC quick -->
+
+    <!-- Litecoin -->
     <div class="card stack">
       <h3 style="margin:0">Litecoin</h3>
       <div class="two">
@@ -53,7 +70,7 @@
         </div>
       </div>
     </div>
-    <!-- Create Invoice -->
+
     <div class="row" style="justify-content:flex-end">
       <a class="btn" href="./new.html">Create invoice →</a>
     </div>
@@ -67,21 +84,33 @@
 </main>
 
 <script>
-  const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
-  const $=id=>document.getElementById(id); const qr=(d)=>`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(d)}`;
-  $("yr").textContent=new Date().getFullYear();
-  // UPI quick
-  function upiURI(am){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(am)p.set("am",am);return `upi://pay?${p}`;}
-  const setUpi=()=>{const am=$("upiAmt").value.trim();const uri=upiURI(am);$("upiQR").src=qr(uri);$("upiOpen").onclick=()=>location.href=uri;};
-  $("upiAmt").addEventListener("input",setUpi); setUpi();
-  // LTC quick (USD->LTC live)
-  let ltcUsd=null; async function price(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd",{cache:"no-store"});const j=await r.json();ltcUsd=j?.litecoin?.usd||null;$("rate").textContent=ltcUsd?`1 LTC ≈ $${ltcUsd.toFixed(2)}`:"";}catch{}}
-  price(); setInterval(price,120000);
-  function ltcURI(usd){const ltc=ltcUsd?Math.max(0,(Number(usd)||0)/ltcUsd):0;const a=new URLSearchParams({amount:ltc.toFixed(8)});return `litecoin:${LTC_ADDR}?${a}`;}
-  const setLtc=()=>{const usd=$("usdAmt").value.trim();const uri=ltcURI(usd);$("ltcQR").src=qr(uri);$("ltcOpen").onclick=()=>location.href=uri;};
-  $("usdAmt").addEventListener("input",setLtc); setLtc();
-  // copy
-  document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{const s=b.getAttribute("data-copy");const t=document.querySelector(s).textContent.trim();try{await navigator.clipboard.writeText(t);b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",1200);}catch{}}));
+const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
+const $=id=>document.getElementById(id);
+const qr=(d)=>`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(d)}`;
+
+// animations
+document.querySelectorAll('.card').forEach(c=>{c.classList.add('reveal');requestAnimationFrame(()=>c.classList.add('show'))});
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty('--x',`${e.clientX-r.left}px`);b.style.setProperty('--y',`${e.clientY-r.top}px`);b.classList.add('rippling');setTimeout(()=>b.classList.remove('rippling'),220)},{passive:true});
+
+$("yr").textContent=new Date().getFullYear();
+
+// UPI
+function upiURI(am){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(am)p.set("am",am);return `upi://pay?${p}`;}
+const upiQR=$("upiQR");
+function setUpi(){const am=$("upiAmt").value.trim();const uri=upiURI(am);upiQR.classList.remove('ready');upiQR.onload=()=>upiQR.classList.add('ready');upiQR.src=qr(uri);$("upiOpen").onclick=()=>location.href=uri;}
+$("upiAmt").addEventListener("input",setUpi);setUpi();
+
+// Litecoin
+let ltcUsd=null;
+async function price(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd",{cache:"no-store"});const j=await r.json();ltcUsd=j?.litecoin?.usd||null;$("rate").textContent=ltcUsd?`1 LTC ≈ $${ltcUsd.toFixed(2)}`:"";}catch{}}
+price();setInterval(price,120000);
+function ltcURI(usd){const ltc=ltcUsd?Math.max(0,(Number(usd)||0)/ltcUsd):0;return `litecoin:${LTC_ADDR}?amount=${ltc.toFixed(8)}`;}
+const ltcQR=$("ltcQR");
+function setLtc(){const usd=$("usdAmt").value.trim();const uri=ltcURI(usd);ltcQR.classList.remove('ready');ltcQR.onload=()=>ltcQR.classList.add('ready');ltcQR.src=qr(uri);$("ltcOpen").onclick=()=>location.href=uri;}
+$("usdAmt").addEventListener("input",setLtc);setLtc();
+
+// copy
+document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{const s=b.getAttribute("data-copy");const t=document.querySelector(s).textContent.trim();try{await navigator.clipboard.writeText(t);b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",1200);}catch{}}));
 </script>
 </body>
 </html>
