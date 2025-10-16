@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Support — LTC & UPI</title>
+  <title>Support Ullas</title>
   <style>
     :root { --bg:#0b0f14; --card:#121822; --text:#e8eef7; --muted:#9fb0c3; --accent:#4dd0a8; }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
     .wrap{max-width:860px;margin:48px auto;padding:0 20px}
     h1{font-size:26px;margin:0 0 16px}
+    h2{margin:0 0 8px}
     p.lead{color:var(--muted);margin:0 0 28px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
     .card{background:var(--card);border:1px solid #1e2735;border-radius:16px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
@@ -22,17 +23,23 @@
     .meta{color:var(--muted);font-size:13px;margin-top:10px}
     a.deep{color:var(--accent);text-decoration:none}
     a.deep:hover{text-decoration:underline}
+    .redirect-box{margin-top:32px;text-align:center}
+    .redirect-btn{background:var(--accent);color:#000;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block}
+    .redirect-btn:hover{background:#38b895}
+    footer{margin-top:36px;color:var(--muted);text-align:center}
   </style>
+  <!-- Optional: auto-redirect after 5 seconds -->
+  <!-- <meta http-equiv="refresh" content="5; url=https://tiv.mysellauth.com/"> -->
 </head>
 <body>
   <main class="wrap">
-    <h1>Payment Methods</h1>
-    <p class="lead">View or copy my <strong>Litecoin</strong> address and <strong>UPI</strong> ID below. QR codes included for quick scan.</p>
+    <h1>Support Ullas</h1>
+    <p class="lead">Copy my <strong>Litecoin</strong> address or <strong>UPI</strong> ID, scan the QR codes, or continue via Sellauth.</p>
 
     <section class="grid">
       <!-- Litecoin -->
       <article class="card" id="ltcCard">
-        <h2 style="margin-top:0">Litecoin (LTC)</h2>
+        <h2>Litecoin (LTC)</h2>
         <div class="row" style="margin:8px 0 12px">
           <code class="addr" id="ltcAddr">ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z</code>
           <button class="btn" data-copy="#ltcAddr">Copy</button>
@@ -40,13 +47,13 @@
         <img id="ltcQR" class="qr" alt="LTC QR code" />
         <div class="meta">
           Payment link:
-          <a class="deep" id="ltcLink" target="_blank" rel="noopener">litecoin:ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z</a>
+          <a class="deep" id="ltcLink" target="_blank" rel="noopener"></a>
         </div>
       </article>
 
       <!-- UPI -->
       <article class="card" id="upiCard">
-        <h2 style="margin-top:0">UPI</h2>
+        <h2>UPI</h2>
         <div class="row" style="margin:8px 0 12px">
           <code class="addr" id="upiId">ullasfr@fam</code>
           <button class="btn" data-copy="#upiId">Copy</button>
@@ -57,52 +64,75 @@
           <a class="deep" id="upiLink" target="_blank" rel="noopener"></a>
         </div>
       </article>
+
+      <!-- Contact Support -->
+      <article class="card" id="supportCard">
+        <h2>Contact Support</h2>
+        <p class="meta">Email me if you need help with a payment or have any questions.</p>
+        <div class="row" style="margin:8px 0 12px">
+          <code class="addr" id="supportEmail">support@ullas.shop</code>
+          <button class="btn" data-copy="#supportEmail">Copy</button>
+        </div>
+        <a class="deep" href="mailto:support@ullas.shop">Open your email app</a>
+      </article>
     </section>
+
+    <!-- Redirect to Sellauth -->
+    <div class="redirect-box">
+      <p>Prefer paying on Sellauth?</p>
+      <a class="redirect-btn" href="https://tiv.mysellauth.com/" target="_blank" rel="noopener">Go to My Sellauth Page</a>
+    </div>
+
+    <footer>
+      &copy; <span id="yr"></span> Ullas · <a class="deep" href="mailto:support@ullas.shop">support@ullas.shop</a>
+    </footer>
   </main>
 
   <script>
-    // Your addresses/IDs
+    // Your payment details
     const LTC_ADDRESS = "ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
     const UPI_ID      = "ullasfr@fam";
 
-    // Build standard payment URIs
+    // Build payment URIs
     const ltcURI = `litecoin:${LTC_ADDRESS}`;
     const upiURI = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent("Ullas")}`;
 
-    // Plug URIs into links
+    // Put URIs into links
     document.getElementById("ltcLink").href = ltcURI;
     document.getElementById("ltcLink").textContent = ltcURI;
     document.getElementById("upiLink").href = upiURI;
     document.getElementById("upiLink").textContent = upiURI;
 
-    // Generate QR codes via a lightweight hosted endpoint
-    // (You can replace with any QR generator you prefer)
+    // Generate QR codes (using a lightweight public API)
     const qrAPI = (data) =>
       `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
 
     document.getElementById("ltcQR").src = qrAPI(ltcURI);
     document.getElementById("upiQR").src = qrAPI(upiURI);
 
-    // Copy-to-clipboard buttons
-    const buttons = document.querySelectorAll("[data-copy]");
-    buttons.forEach(btn => {
+    // Copy-to-clipboard buttons (LTC / UPI / Support email)
+    document.querySelectorAll("[data-copy]").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const sel = btn.getAttribute("data-copy");
-        const text = document.querySelector(sel).textContent.trim();
+        const targetSel = btn.getAttribute("data-copy");
+        const text = document.querySelector(targetSel).textContent.trim();
         try {
           await navigator.clipboard.writeText(text);
           btn.classList.add("success");
           btn.textContent = "Copied!";
           setTimeout(() => { btn.classList.remove("success"); btn.textContent = "Copy"; }, 1400);
         } catch (e) {
+          // Fallback: select text for manual copy
           btn.textContent = "Press Ctrl/Cmd+C";
           const range = document.createRange();
-          range.selectNodeContents(document.querySelector(sel));
+          range.selectNodeContents(document.querySelector(targetSel));
           const selObj = window.getSelection();
           selObj.removeAllRanges(); selObj.addRange(range);
         }
       });
     });
+
+    // Footer year
+    document.getElementById("yr").textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
