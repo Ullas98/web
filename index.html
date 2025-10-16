@@ -1,110 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Create Invoice — Ullas</title>
-<style>
-  :root{--bg:#0b0b0d;--card:rgba(255,255,255,.04);--muted:#b8b8c4}
-  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Arial}
-  .wrap{width:min(720px,94vw);padding:26px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);box-shadow:0 8px 30px rgba(0,0,0,.6)}
-  h1{margin:4px 0 12px;font-size:22px}
-  label{display:block;color:var(--muted);margin-top:12px;font-size:13px}
-  input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #222;background:#070708;color:#fff;margin-top:6px;font-size:15px}
-  textarea{min-height:84px;resize:vertical}
-  .row{display:flex;gap:10px}
-  .row > *{flex:1}
-  button{margin-top:14px;padding:12px 14px;border-radius:10px;border:0;background:#fff;color:#000;font-weight:700;cursor:pointer}
-  pre{background:#060607;color:#dcdceb;padding:12px;border-radius:8px;overflow:auto;margin-top:12px}
-  .small{color:var(--muted);font-size:13px;margin-top:8px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ullas</title>
+  <style>
+    body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:#0b0b0d;color:#fff;font-family:system-ui,Arial}
+    .card{background:rgba(255,255,255,.06);padding:32px;border-radius:16px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+    .profile{width:120px;height:120px;border-radius:50%;border:3px solid #fff;object-fit:cover}
+    h1{margin:12px 0 6px}
+    p{color:#bbb;margin:0 0 16px}
+    a.link{display:inline-block;margin:0 8px;color:#fff;text-decoration:none}
+    a.link:hover{text-decoration:underline}
+    .btn{display:inline-block;margin-top:16px;padding:12px 16px;background:#fff;color:#000;border-radius:10px;text-decoration:none;font-weight:700}
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Create an invoice link</h1>
-    <p class="small">Fill in the details and press <strong>Generate link</strong>. Copy the link and send it to the customer.</p>
-
-    <label>Invoice ID (optional)</label>
-    <input id="invoiceId" placeholder="INV-2025-001 (or leave blank to auto-generate)">
-
-    <label>Customer name (optional)</label>
-    <input id="custName" placeholder="Client Name">
-
-    <label>Customer email (optional)</label>
-    <input id="custEmail" type="email" placeholder="client@example.com">
-
-    <label>Description</label>
-    <textarea id="desc" placeholder="Work description, details, etc."></textarea>
-
-    <div class="row">
-      <div>
-        <label>Amount</label>
-        <input id="amount" type="number" min="0" step="0.01" placeholder="1999.00">
-      </div>
-      <div>
-        <label>Currency</label>
-        <select id="currency">
-          <option value="INR">INR</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
+  <div class="card">
+    <img class="profile" src="https://i.ibb.co/0n8Y3nK/skull.jpg" alt="profile"/>
+    <h1>ullas</h1>
+    <p>@bwu2 · last seen unknown</p>
+    <div>
+      <a class="link" href="https://instagram.com/yourusername" target="_blank">Instagram</a>
+      <a class="link" href="https://github.com/ullas98" target="_blank">GitHub</a>
     </div>
-
-    <label>Notes (optional)</label>
-    <input id="notes" placeholder="e.g., Bank transfer to AC XXX, or pay via UPI: xxxx@bank">
-
-    <button id="gen">Generate link</button>
-
-    <div id="out" style="margin-top:14px"></div>
-
-    <pre id="preview" style="display:none"></pre>
+    <a class="btn" href="create.html">Create Invoice</a>
   </div>
-
-<script>
-function b64urlEncode(str){
-  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function makeToken(obj){
-  return b64urlEncode(JSON.stringify(obj));
-}
-function uid(){
-  return 'id'+Math.random().toString(36).slice(2,10);
-}
-
-document.getElementById('gen').addEventListener('click', ()=>{
-  const id = document.getElementById('invoiceId').value.trim() || uid();
-  const payload = {
-    id,
-    name: document.getElementById('custName').value.trim() || null,
-    email: document.getElementById('custEmail').value.trim() || null,
-    desc: document.getElementById('desc').value.trim() || 'Invoice',
-    amount: Number(document.getElementById('amount').value) || 0,
-    currency: document.getElementById('currency').value || 'INR',
-    notes: document.getElementById('notes').value.trim() || null,
-    ts: Date.now()
-  };
-
-  // Basic validation
-  if (!payload.amount || payload.amount <= 0) {
-    alert('Enter a valid amount (> 0).');
-    return;
-  }
-  const token = makeToken(payload);
-  const link = location.origin + location.pathname.replace(/index\.html$/,'').replace(/\/$/,'') + '/invoice.html?d=' + encodeURIComponent(token);
-
-  const out = document.getElementById('out');
-  out.innerHTML = `<div><strong>Shareable link:</strong><div style="margin-top:8px"><a href="${link}" target="_blank">${link}</a></div></div>
-  <div class="small">Tip: use this link as-is. If you want to hide details, shorten the link via your preferred URL shortener.</div>
-  <div style="margin-top:8px"><button id="copy">Copy link</button></div>`;
-
-  document.getElementById('preview').style.display='block';
-  document.getElementById('preview').textContent = JSON.stringify(payload,null,2);
-
-  document.getElementById('copy').addEventListener('click', ()=>{
-    navigator.clipboard.writeText(link).then(()=>{ alert('Copied link to clipboard'); }).catch(()=>{ alert('Copy failed — manually select and copy the link.'); });
-  });
-});
-</script>
 </body>
 </html>
