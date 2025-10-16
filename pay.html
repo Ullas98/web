@@ -5,17 +5,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Invoice</title>
 <style>
-  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
+  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7;--anim-fast:160ms;--anim-med:220ms;--easing:cubic-bezier(.2,.65,.2,1)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
   .wrap{max-width:820px;margin:28px auto;padding:0 14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28)}
-  .stack{display:grid;gap:12px} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  h1{margin:0 0 8px;font-size:26px} .k{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28);
+        transition:transform var(--anim-med) var(--easing),opacity var(--anim-med) var(--easing)}
+  .stack{display:grid;gap:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{margin:0 0 8px;font-size:26px}
+  .k{color:var(--muted);font-size:13px}
   code.badge{display:inline-block;padding:10px 12px;border:1px solid var(--line);background:#0a111b;border-radius:10px;font-family:ui-monospace,Menlo,monospace;word-break:break-all}
-  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:10px 14px;border-radius:10px}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:10px 14px;border-radius:10px;position:relative;overflow:hidden;
+       transition:transform var(--anim-fast) var(--easing),box-shadow var(--anim-fast) var(--easing)}
   .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
-  .qr{width:240px;height:240px;border-radius:12px;background:#0a111b;border:1px solid var(--line}
-  .two{display:grid;grid-template-columns:1fr;gap:14px} @media(min-width:720px){.two{grid-template-columns:240px 1fr}}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .btn:active{transform:translateY(0);box-shadow:none}
+  .btn::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--x,50%) var(--y,50%),rgba(255,255,255,.18),transparent 45%);
+              opacity:0;transform:scale(.9);transition:opacity 300ms var(--easing),transform 300ms var(--easing)}
+  .btn.rippling::after{opacity:1;transform:scale(1)}
+  .qr{width:300px;height:300px;border-radius:12px;border:1px solid var(--line);
+      background:linear-gradient(100deg,rgba(255,255,255,.08) 20%,rgba(255,255,255,.18) 30%,rgba(255,255,255,.08) 40%) #0a111b;
+      background-size:200% 100%;animation:shimmer 1200ms var(--easing) infinite}
+  .qr.ready{animation:none;background:#0a111b}
+  .two{display:grid;gap:14px}
+  @media(min-width:720px){.two{grid-template-columns:300px 1fr}}
+  @keyframes shimmer{0%{background-position:180% 0}100%{background-position:-20% 0}}
 </style>
 </head>
 <body>
@@ -29,82 +44,71 @@
 </main>
 
 <script>
-  // your details
-  const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
-  const $=id=>document.getElementById(id);
-  const qr=d=>`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(d)}`;
+const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
+const $=id=>document.getElementById(id);
+const qr=d=>`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(d)}`;
 
-  // token format (#u|499|name  or #l|20|name)
-  function parseToken(){
-    const t=(location.hash||"").slice(1); if(!t) return null;
-    const parts=t.split("|");
-    const m=(parts[0]||"").toLowerCase(); // 'u' or 'l'
-    const amt=(parts[1]||"").trim(); const name=(parts[2]||"").trim();
-    if(!m || !amt) return null;
-    return {m, amt:Number(amt), name};
-  }
+// animations
+document.querySelectorAll('.card').forEach(c=>{c.classList.add('reveal');requestAnimationFrame(()=>c.classList.add('show'))});
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty('--x',`${e.clientX-r.left}px`);b.style.setProperty('--y',`${e.clientY-r.top}px`);b.classList.add('rippling');setTimeout(()=>b.classList.remove('rippling'),220)},{passive:true});
 
-  function topSummary({m, amt, name}){
-    const who = name? `<div><span class="k">Username</span><div><code class="badge">${name}</code></div></div>` : "";
-    const meth = m==="u"?"UPI":"Litecoin";
-    const amtLabel = m==="u"?"Amount (INR)":"Amount (USD)";
-    $("top").innerHTML = `
-      <div class="row" style="flex-wrap:wrap">
-        <div><span class="k">Payment method</span><div><code class="badge">${meth}</code></div></div>
-        <div><span class="k">${amtLabel}</span><div><code class="badge">${amt}</code></div></div>
-        ${who}
-      </div>`;
-  }
+// parse invoice token
+function parseToken(){
+  const t=(location.hash||"").slice(1);
+  if(!t) return null;
+  const p=t.split("|");
+  const m=(p[0]||"").toLowerCase();
+  const amt=(p[1]||"").trim();
+  const name=(p[2]||"").trim();
+  if(!m||!amt) return null;
+  return {m, amt:Number(amt), name};
+}
 
-  async function renderUPI(amt){
-    const uri = upiURI(amt);
-    $("content").innerHTML = `
-      <div class="two">
-        <img class="qr" src="${qr(uri)}" alt="UPI QR">
-        <div class="stack">
-          <div><span class="k">UPI link</span><div class="row"><code class="badge" id="link">${uri}</code><button class="btn" id="copy">Copy</button><a class="btn primary" href="${uri}">Open UPI app</a></div></div>
-          <div><span class="k">UPI ID</span><div><code class="badge">${UPI_ID}</code></div></div>
-          <div><span class="k">Amount (INR)</span><div><code class="badge">${amt}</code></div></div>
-        </div>
-      </div>`;
-    $("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(uri);$("copy").textContent="Copied!";setTimeout(()=>$("copy").textContent="Copy",1200);}catch{}});
-  }
-  function upiURI(amount){
-    const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"}); if(amount) p.set("am",amount); return `upi://pay?${p}`;
-  }
+// render
+function upiURI(amount){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(amount)p.set("am",amount);return `upi://pay?${p}`;}
+async function getPrice(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");const j=await r.json();return j?.litecoin?.usd||null}catch{return null}}
 
-  async function renderLTC(usd){
-    const price = await getPrice();
-    const ltc = price? (Number(usd)/price) : 0;
-    const ltcStr=(ltc>0? ltc:0).toFixed(8);
-    const uri = `litecoin:${LTC_ADDR}?${new URLSearchParams({amount:ltcStr})}`;
-    $("content").innerHTML = `
-      <div class="two">
-        <img class="qr" src="${qr(uri)}" alt="LTC QR">
-        <div class="stack">
-          <div><span class="k">Litecoin link</span><div class="row"><code class="badge" id="link">${uri}</code><button class="btn" id="copy">Copy</button><a class="btn primary" href="${uri}">Open wallet</a></div></div>
-          <div><span class="k">Send to</span><div><code class="badge">${LTC_ADDR}</code></div></div>
-          <div class="row"><div><span class="k">Amount (USD)</span><div><code class="badge">${usd}</code></div></div>
-               <div><span class="k">Amount (LTC)</span><div><code class="badge">${ltcStr}</code></div></div></div>
-          <div class="k">Live price: 1 LTC ≈ $<span id="p">${price?price.toFixed(2):"—"}</span> USD</div>
-        </div>
-      </div>`;
-    $("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(uri);$("copy").textContent="Copied!";setTimeout(()=>$("copy").textContent="Copy",1200);}catch{}});
-  }
-  async function getPrice(){
-    try{
-      const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd",{cache:"no-store"});
-      const j=await r.json(); return j?.litecoin?.usd||null;
-    }catch{return null}
-  }
+async function renderUPI(amt){
+  const uri=upiURI(amt);
+  $("content").innerHTML=`<div class="two">
+    <img id="qrimg" class="qr" alt="UPI QR">
+    <div class="stack">
+      <div><span class="k">UPI link</span><div class="row"><code class="badge">${uri}</code><a class="btn primary" href="${uri}">Open UPI app</a></div></div>
+      <div><span class="k">UPI ID</span><div><code class="badge">${UPI_ID}</code></div></div>
+      <div><span class="k">Amount (INR)</span><div><code class="badge">${amt}</code></div></div>
+    </div>
+  </div>`;
+  const img=$("qrimg");img.classList.remove('ready');img.onload=()=>img.classList.add('ready');img.src=qr(uri);
+}
 
-  (async function init(){
-    const t=parseToken();
-    if(!t){$("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a> to generate a new link.</p>';return;}
-    topSummary(t);
-    if(t.m==="u") await renderUPI(t.amt);
-    else await renderLTC(t.amt);
-  })();
+async function renderLTC(usd){
+  const price=await getPrice();const ltc=price?(Number(usd)/price):0;const ltcStr=(ltc>0?ltc:0).toFixed(8);
+  const uri=`litecoin:${LTC_ADDR}?amount=${ltcStr}`;
+  $("content").innerHTML=`<div class="two">
+    <img id="qrimg" class="qr" alt="LTC QR">
+    <div class="stack">
+      <div><span class="k">Litecoin link</span><div class="row"><code class="badge">${uri}</code><a class="btn primary" href="${uri}">Open wallet</a></div></div>
+      <div><span class="k">Send to</span><div><code class="badge">${LTC_ADDR}</code></div></div>
+      <div class="row"><div><span class="k">Amount (USD)</span><div><code class="badge">${usd}</code></div></div>
+           <div><span class="k">Amount (LTC)</span><div><code class="badge">${ltcStr}</code></div></div></div>
+      <div class="k">Live price: 1 LTC ≈ $${price?price.toFixed(2):"—"}</div>
+    </div>
+  </div>`;
+  const img=$("qrimg");img.classList.remove('ready');img.onload=()=>img.classList.add('ready');img.src=qr(uri);
+}
+
+// init
+(async function(){
+  const t=parseToken();
+  if(!t){$("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a> to generate a new link.</p>';return;}
+  const who=t.name?`<div><span class="k">Username</span><div><code class="badge">${t.name}</code></div></div>`:"";
+  const meth=t.m==="u"?"UPI":"Litecoin";
+  const amtLabel=t.m==="u"?"Amount (INR)":"Amount (USD)";
+  $("top").innerHTML=`<div class="row" style="flex-wrap:wrap">
+    <div><span class="k">Payment method</span><div><code class="badge">${meth}</code></div></div>
+    <div><span class="k">${amtLabel}</span><div><code class="badge">${t.amt}</code></div></div>${who}</div>`;
+  if(t.m==="u")await renderUPI(t.amt);else await renderLTC(t.amt);
+})();
 </script>
 </body>
 </html>
