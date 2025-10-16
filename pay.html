@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Invoice</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="wrap stack">
-  <section class="card stack" id="box">
+  <section class="card stack reveal" id="box">
     <h1>Invoice</h1>
     <div id="top" class="stack"></div>
     <div id="content" class="stack"></div>
@@ -18,13 +18,119 @@
 <script>
 const UPI_ID="ullasfr@fam", UPI_NAME="Ullas A", LTC_ADDR="ltc1qf744fuu8uzsr9rplsns9sprv9nx3e9l4vxj50z";
 const qr=d=>`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(d)}`;
+
+/* ripple effect */
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  const r=b.getBoundingClientRect();
+  b.style.setProperty('--x',`${e.clientX-r.left}px`);
+  b.style.setProperty('--y',`${e.clientY-r.top}px`);
+  b.classList.add('rippling');
+  setTimeout(()=>b.classList.remove('rippling'),220)
+},{passive:true});
+
+/* reveal animation */
+document.querySelectorAll('.reveal').forEach(c=>requestAnimationFrame(()=>c.classList.add('show')));
+
+/* copy helper */
 async function copyText(t){try{await navigator.clipboard.writeText(t);}catch{}}
-function parseToken(){const t=(location.hash||"").slice(1);if(!t)return null;const p=t.split("|");return{m:p[0],amt:p[1],name:p[2]||""};}
-function upiURI(amount){const p=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});if(amount)p.set("am",amount);return `upi://pay?${p}`;}
-function renderUPI(amt){const uri=upiURI(amt);document.getElementById("content").innerHTML=`<div class="two"><img id="qrimg" class="qr" alt="UPI QR"><div class="stack"><div><span class="k">UPI ID</span><div class="row"><code class="badge">${UPI_ID}</code><button class="btn" onclick="copyText('${UPI_ID}')">Copy</button></div></div><div><span class="k">Amount (INR)</span><div class="row"><code class="badge">${amt}</code><button class="btn" onclick="copyText('${amt}')">Copy</button></div></div><div><a class="btn primary" href="${uri}">Open UPI app</a></div></div></div>`;document.getElementById("qrimg").src=qr(uri);}
-async function getPrice(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd");const j=await r.json();return j?.litecoin?.usd||null}catch{return null}}
-async function renderLTC(usd){const price=await getPrice();const ltc=price?(usd/price):0;const ltcStr=ltc.toFixed(8);const uri=`litecoin:${LTC_ADDR}?amount=${ltcStr}`;document.getElementById("content").innerHTML=`<div class="two"><img id="qrimg" class="qr" alt="LTC QR"><div class="stack"><div><span class="k">LTC Address</span><div class="row"><code class="badge">${LTC_ADDR}</code><button class="btn" onclick="copyText('${LTC_ADDR}')">Copy</button></div></div><div><span class="k">Amount (LTC)</span><div class="row"><code class="badge">${ltcStr}</code><button class="btn" onclick="copyText('${ltcStr}')">Copy</button></div></div><div><span class="k">Amount (USD)</span><div><code class="badge">${usd}</code></div></div><div class="k">Live price: 1 LTC ≈ $${price?price.toFixed(2):"—"}</div><div><a class="btn primary" href="${uri}">Open wallet</a></div></div></div>`;document.getElementById("qrimg").src=qr(uri);}
-(async function(){const t=parseToken();if(!t){document.getElementById("box").innerHTML='<h1>Invalid invoice</h1><p class="k">Use <a href="./new.html">Create invoice</a>.</p>';return;}const who=t.name?`<div><span class="k">Username</span><div><code class="badge">${t.name}</code></div></div>`:"";document.getElementById("top").innerHTML=`<div class="row" style="flex-wrap:wrap"><div><span class="k">Payment method</span><div><code class="badge">${t.m==="u"?"UPI":"Litecoin"}</code></div></div><div><span class="k">${t.m==="u"?"Amount (INR)":"Amount (USD)"}</span><div><code class="badge">${t.amt}</code></div></div>${who}</div>`;if(t.m==="u")renderUPI(t.amt);else await renderLTC(t.amt);})();
+
+/* parse invoice hash */
+function parseToken(){
+  const t=(location.hash||"").slice(1);
+  if(!t) return null;
+  const p=t.split("|");
+  const m=(p[0]||"").toLowerCase();
+  const amt=(p[1]||"").trim();
+  const name=(p[2]||"").trim();
+  if(!m||!amt) return null;
+  return {m, amt:Number(amt), name};
+}
+
+/* ========== UPI ========== */
+function upiURI(amount){
+  const q=new URLSearchParams({pa:UPI_ID,pn:UPI_NAME,cu:"INR"});
+  if(amount)q.set("am",amount);
+  return `upi://pay?${q}`;
+}
+function renderUPI(amt){
+  const uri=upiURI(amt);
+  document.getElementById("content").innerHTML=`
+    <div class="two lg">
+      <img id="qrimg" class="qr lg" alt="UPI QR">
+      <div class="stack">
+        <div><span class="muted">UPI ID</span>
+          <div class="row"><code class="badge">${UPI_ID}</code>
+          <button class="btn" onclick="copyText('${UPI_ID}')">Copy</button></div></div>
+
+        <div><span class="muted">Amount (INR)</span>
+          <div class="row"><code class="badge">${amt}</code>
+          <button class="btn" onclick="copyText('${amt}')">Copy</button></div></div>
+
+        <a class="btn primary" href="${uri}">Open UPI app</a>
+      </div>
+    </div>`;
+  const img=document.getElementById("qrimg");
+  img.classList.remove("ready");img.onload=()=>img.classList.add("ready");img.src=qr(uri);
+}
+
+/* ========== LTC ========== */
+async function getPrice(){
+  try{
+    const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd",{cache:"no-store"});
+    const j=await r.json();return j?.litecoin?.usd||null;
+  }catch{return null}
+}
+async function renderLTC(usd){
+  const price=await getPrice();
+  const ltc=price?(Number(usd)/price):0;
+  const ltcStr=(ltc>0?ltc:0).toFixed(8);
+  const uri=`litecoin:${LTC_ADDR}?${new URLSearchParams({amount:ltcStr})}`;
+
+  document.getElementById("content").innerHTML=`
+    <div class="two lg">
+      <img id="qrimg" class="qr lg" alt="LTC QR">
+      <div class="stack">
+        <div><span class="muted">LTC Address</span>
+          <div class="row"><code class="badge">${LTC_ADDR}</code>
+          <button class="btn" onclick="copyText('${LTC_ADDR}')">Copy</button></div></div>
+
+        <div><span class="muted">Amount (LTC)</span>
+          <div class="row"><code class="badge">${ltcStr}</code>
+          <button class="btn" onclick="copyText('${ltcStr}')">Copy</button></div></div>
+
+        <div><span class="muted">Amount (USD)</span>
+          <div><code class="badge">${usd}</code></div></div>
+
+        <div class="muted">Live price: 1 LTC ≈ $${price?price.toFixed(2):"—"}</div>
+
+        <a class="btn primary" href="${uri}">Open wallet</a>
+      </div>
+    </div>`;
+  const img=document.getElementById("qrimg");
+  img.classList.remove("ready");img.onload=()=>img.classList.add("ready");img.src=qr(uri);
+}
+
+/* ========== INIT ========== */
+(async function(){
+  const t=parseToken();
+  if(!t){
+    document.getElementById("box").innerHTML='<h1>Invalid invoice</h1><p class="muted">Use <a href="./new.html">Create Invoice</a> to generate a new link.</p>';
+    return;
+  }
+  const who=t.name?`<div><span class="muted">Username</span><div><code class="badge">${t.name}</code></div></div>`:"";
+  const meth=t.m==="u"?"UPI":"Litecoin";
+  const label=t.m==="u"?"Amount (INR)":"Amount (USD)";
+
+  document.getElementById("top").innerHTML=`
+    <div class="row" style="flex-wrap:wrap">
+      <div><span class="muted">Payment method</span><div><code class="badge">${meth}</code></div></div>
+      <div><span class="muted">${label}</span><div><code class="badge">${t.amt}</code></div></div>
+      ${who}
+    </div>`;
+
+  if(t.m==="u") renderUPI(t.amt); else await renderLTC(t.amt);
+})();
 </script>
 </body>
 </html>
