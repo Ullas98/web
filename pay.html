@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Payment</title>
+<style>
+  :root{--bg:#0b0b0d;--muted:#b8b8c4}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Arial}
+  .wrap{width:min(760px,96vw);padding:28px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  h1{margin:0;font-size:20px}
+  .muted{color:var(--muted);font-size:13px}
+  .box{margin-top:16px;padding:18px;border-radius:12px;background:rgba(255,255,255,.06)}
+  .row{display:flex;justify-content:space-between;gap:12px;margin:8px 0}
+  .big{font-size:20px;font-weight:800}
+  .addr{word-break:break-all;font-family:monospace}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{padding:10px 14px;border:0;border-radius:10px;background:#fff;color:#000;font-weight:700;cursor:pointer}
+  canvas{background:#fff;border-radius:8px}
+  a.back{color:#fff;text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 id="title">Payment</h1>
+        <div class="muted" id="invId">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted">Method</div>
+        <div id="method" class="big">—</div>
+      </div>
+    </header>
+
+    <div class="box">
+      <div class="row"><div class="muted">Username</div><div id="user" class="big">—</div></div>
+      <div class="row" id="row-inr" style="display:none"><div class="muted">Amount</div><div id="amount-inr" class="big">—</div></div>
+      <div class="row" id="row-usd" style="display:none"><div class="muted">Amount (USD)</div><div id="amount-usd" class="big">—</div></div>
+      <div class="row" id="row-ltc" style="display:none"><div class="muted">Amount (LTC)</div><div id="amount-ltc" class="big">—</div></div>
+      <div class="row" id="row-upi" style="display:none"><div class="muted">UPI ID</div><div id="upi" class="addr">—</div></div>
+      <div class="row" id="row-addr" style="display:none"><div class="muted">Address</div><div id="addr" class="addr">—</div></div>
+
+      <div class="row"><div class="muted">QR</div><div><canvas id="qrc" width="220" height="220"></canvas></div></div>
+
+      <div class="actions">
+        <button id="copy-req">Copy payment URI</button>
+        <button id="copy-addr" style="display:none">Copy address</button>
+        <a class="back" href="index.html">Home</a>
+      </div>
+
+      <div id="notes" class="muted" style="margin-top:10px;white-space:pre-wrap"></div>
+    </div>
+  </div>
+
+<script>
+/* LZ part (same shim) */
+!function(){var s=window._LZ;if(!s){console.warn('LZ helper missing');window._LZ={decompressFromEncodedURIComponent:x=>x};}}();
+
+/* Minimal QR generator (qrcode.js by Kazuhiko Arase – MIT, tiny build) */
+!function(){function l(a,b){this._el=a;this._htOption=b}function m(a,b){this._oQRCode=new QRCodeModel(b||4,"M");this._oQRCode.addData(a);this._oQRCode.make()}function n(a,b){for(var c=0;c<b;c++)a.push(0)}function p(a,b,c){a[b>>3]|=128>>(b%8)}function q(a,b){this.buffer=a;this.length=b}
+function r(a,b){var c,d,e,f,g,h,i,j,k,l=1,m=0,n=0,o=[];for(c=0;8>c;c++)o[c]=0;for(c=0;c<b.length;c++){for(d=b.charCodeAt(c),e=0;8>e;e++)p(o,e+8*(c%1)),d<<=1;for(;d>0;)d>>>=1}return o}
+function t(a,b){var c=document.getElementById(a);c.getContext("2d").clearRect(0,0,c.width,c.height);for(var d=c.getContext("2d"),e=b._oQRCode.getModuleCount(),f=c.width/e,g=0;g<e;g++)for(var h=0;h<e;h++)b._oQRCode.isDark(g,h)&&(d.fillRect(Math.round(h*f),Math.round(g*f),Math.ceil(f),Math.ceil(f)))}window.QR4={make:function(a,b,c){var d=new m(a,c);t(b,d)}}}();
+
+/* read token */
+function getPayload(){
+  const hash = location.hash.replace(/^#t=/,'');
+  if(!hash){ alert('Missing token.'); throw new Error('no token'); }
+  try{
+    const json = window._LZ.decompressFromEncodedURIComponent(hash);
+    return JSON.parse(json);
+  }catch(e){
+    alert('Invalid or corrupted link.'); throw e;
+  }
+}
+
+/* build URIs */
+function buildUPI(p){
+  const params = new URLSearchParams();
+  params.set('pa', p.p); // upi id
+  if (p.u) params.set('pn', p.u);
+  params.set('am', String(p.ai));
+  params.set('cu', 'INR');
+  if (p.i) params.set('tn', p.i);
+  return `upi://pay?${params.toString()}`;
+}
+function buildLTC(p){
+  let uri = `litecoin:${p.l}`;
+  const qp = [];
+  if (p.al && p.al>0) qp.push(`amount=${p.al}`);
+  return qp.length? uri + '?' + qp.join('&') : uri;
+}
+
+/* render */
+const p = getPayload();
+document.getElementById('title').textContent = 'Payment' + (p.i? ` – ${p.i}`:'');
+document.getElementById('invId').textContent = p.i || '—';
+document.getElementById('user').textContent = p.u || '—';
+document.getElementById('method').textContent = p.m.toUpperCase();
+if (p.n) document.getElementById('notes').textContent = p.n;
+
+let uri = '';
+if (p.m==='upi'){
+  document.getElementById('row-inr').style.display='';
+  document.getElementById('amount-inr').textContent = `${p.ai.toFixed(2)} INR`;
+  document.getElementById('row-upi').style.display='';
+  document.getElementById('upi').textContent = p.p;
+  uri = buildUPI(p);
+} else {
+  document.getElementById('row-usd').style.display='';
+  document.getElementById('amount-usd').textContent = `$${p.au.toFixed(2)} USD`;
+  document.getElementById('row-ltc').style.display='';
+  document.getElementById('amount-ltc').textContent = `${p.al} LTC`;
+  document.getElementById('row-addr').style.display='';
+  document.getElementById('addr').textContent = p.l;
+  document.getElementById('copy-addr').style.display='';
+  uri = buildLTC(p);
+}
+
+/* draw QR */
+QR4.make(uri, 'qrc', 6);
+
+/* buttons */
+document.getElementById('copy-req').onclick = ()=>navigator.clipboard.writeText(uri).then(()=>alert('Payment URI copied!'));
+const copyAddr = document.getElementById('copy-addr');
+if(copyAddr) copyAddr.onclick = ()=>navigator.clipboard.writeText(p.m==='upi'? p.p : p.l).then(()=>alert('Address copied!'));
+</script>
+</body>
+</html>
