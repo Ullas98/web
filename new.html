@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Create Invoice</title>
+<style>
+  :root{--bg:#0b0f14;--card:#111826;--ink:#eef3fb;--muted:#9fb0c5;--line:#1e2a3c;--accent:#4dd1a7}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,Segoe UI,Roboto}
+  .wrap{max-width:820px;margin:28px auto;padding:0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+  .stack{display:grid;gap:12px} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{margin:0 0 8px;font-size:26px} label{color:var(--muted);display:block;margin:8px 0 6px}
+  input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0f1621;color:var(--ink)}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#0f1621;color:var(--ink);padding:12px 14px;border-radius:10px}
+  .btn.primary{background:var(--accent);color:#00120e;border-color:transparent;font-weight:600}
+  code.badge{display:inline-block;padding:10px 12px;border:1px solid var(--line);background:#0a111b;border-radius:10px;font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+  a.link{color:var(--accent);text-decoration:none} a.link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<main class="wrap stack">
+  <section class="card stack">
+    <h1>Create invoice</h1>
+
+    <div class="row" style="width:100%">
+      <div style="flex:1 1 160px">
+        <label for="method">Payment method</label>
+        <select id="method">
+          <option value="u" selected>UPI (amount in INR)</option>
+          <option value="l">Litecoin (amount in USD → LTC on payment page)</option>
+        </select>
+      </div>
+      <div style="flex:1 1 160px">
+        <label for="amount">Amount</label>
+        <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 499 or 20">
+      </div>
+    </div>
+
+    <div>
+      <label for="name">Username / Note (optional)</label>
+      <input id="name" type="text" maxlength="40" placeholder="e.g. alex">
+    </div>
+
+    <div class="row">
+      <button id="make" class="btn primary">Create link</button>
+      <a class="btn" href="./index.html">← Back</a>
+    </div>
+
+    <div id="out" class="stack" style="display:none">
+      <div><span style="color:var(--muted)">Share this link:</span></div>
+      <div class="row">
+        <code class="badge" id="linkBox"></code>
+        <button class="btn" id="copy">Copy</button>
+        <a id="open" class="btn" target="_blank" rel="noopener">Open</a>
+      </div>
+      <div style="color:var(--muted);font-size:13px">Format: <code>pay.html#u|499|alex</code> or <code>pay.html#l|20|alex</code></div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $=id=>document.getElementById(id);
+  function buildToken(m,a,n){ // compact "m|a|n" (n optional)
+    const mm=(m||"").trim().charAt(0).toLowerCase(); // 'u' or 'l'
+    const aa=(a||"").toString().trim();
+    const nn=(n||"").trim();
+    if(!mm||!aa) return null;
+    // restrict | in username to keep token short
+    const safeN = nn.replaceAll("|","-");
+    return safeN ? `${mm}|${aa}|${safeN}` : `${mm}|${aa}`;
+  }
+  $("make").addEventListener("click",()=>{
+    const m=$("method").value; const a=$("amount").value; const n=$("name").value;
+    if(!a || Number(a)<=0){ alert("Enter a valid amount."); return; }
+    const token=buildToken(m,a,n); if(!token){ alert("Could not build link."); return; }
+    const url = new URL("./pay.html", location.href);
+    url.hash = token; // short
+    $("linkBox").textContent = url.href;
+    $("open").href = url.href;
+    $("out").style.display = "grid";
+  });
+  $("copy").addEventListener("click", async ()=>{
+    const t=$("linkBox").textContent.trim();
+    try{await navigator.clipboard.writeText(t);$("copy").textContent="Copied!";setTimeout(()=>$("copy").textContent="Copy",1200);}catch{}
+  });
+</script>
+</body>
+</html>
