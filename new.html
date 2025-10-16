@@ -48,42 +48,9 @@
 
 <script>
 const $=id=>document.getElementById(id);
-
-// ripple
-document.addEventListener('pointerdown',e=>{
-  const b=e.target.closest('.btn');if(!b)return;
-  const r=b.getBoundingClientRect();
-  b.style.setProperty('--x',`${e.clientX-r.left}px`);
-  b.style.setProperty('--y',`${e.clientY-r.top}px`);
-  b.classList.add('rippling');
-  setTimeout(()=>b.classList.remove('rippling'),220)
-},{passive:true});
-
-// token builder
-function buildToken(m,a,n){
-  const mm=(m||"").trim().charAt(0).toLowerCase(); 
-  const aa=(a||"").toString().trim();
-  const nn=(n||"").trim();
-  if(!mm||!aa) return null;
-  const safeN = nn.replaceAll("|","-");
-  return safeN ? `${mm}|${aa}|${safeN}` : `${mm}|${aa}`;
-}
-
-$("make").addEventListener("click",()=>{
-  const m=$("method").value; const a=$("amount").value; const n=$("name").value;
-  if(!a || Number(a)<=0){ alert("Enter a valid amount."); return; }
-  const token=buildToken(m,a,n);
-  if(!token){ alert("Could not build link."); return; }
-  const url = new URL("./pay.html", location.href); url.hash = token;
-  $("linkBox").textContent = url.href;
-  $("open").href = url.href;
-  $("out").style.display = "grid";
-});
-
-$("copy").addEventListener("click", async ()=>{
-  const t=$("linkBox").textContent.trim();
-  try{await navigator.clipboard.writeText(t);}catch{}
-});
+function buildToken(m,a,n){const mm=(m||"").trim().charAt(0).toLowerCase();const aa=(a||"").trim();const nn=(n||"").trim();if(!mm||!aa)return null;const safeN=nn.replaceAll("|","-");return safeN?`${mm}|${aa}|${safeN}`:`${mm}|${aa}`;}
+$("make").addEventListener("click",()=>{const m=$("method").value;const a=$("amount").value;const n=$("name").value;if(!a||Number(a)<=0){alert("Enter a valid amount.");return;}const token=buildToken(m,a,n);if(!token){alert("Could not build link.");return;}const url=new URL("./pay.html",location.href);url.hash=token;$("linkBox").textContent=url.href;$("open").href=url.href;$("out").style.display="grid";});
+$("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("linkBox").textContent.trim());}catch{}});
 </script>
 </body>
 </html>
